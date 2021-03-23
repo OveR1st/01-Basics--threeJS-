@@ -3,10 +3,23 @@ import './style.css'
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import gsap from 'gsap';
 import * as dat from 'dat.gui';
-import imageSource from '../static/door.jpg';
+import image1 from '../static/textures/minecraft.png';
+import image2 from '../static/textures/checkerboard-1024x1024.png';
+import image3 from '../static/textures/door/color.jpg';
+import imageDoorAmbient from '../static/textures/door/ambientOcclusion.jpg'
+import imageMatcap from '../static/textures/matcaps/3.png';
+import imageDoorHeight from '../static/textures/door/height.jpg';
+import imageDoorMetal from '../static/textures/door/metalness.jpg'
+import imageDoorRough from '../static/textures/door/roughness.jpg'
+import imageDoorNormal from '../static/textures/door/normal.jpg'
+import imageDoorAlpha from '../static/textures/door/alpha.jpg'
+import gradient from '../static/textures/gradients/3.jpg';
+
+const canvas = document.querySelector('.webgl')
 
 // Texture
 const loadingManager = new THREE.LoadingManager()
+const cubeTextureLoader = new THREE.CubeTextureLoader().setPath('textures/environmentMaps/0/')
 
 loadingManager.onStart = () => {
   console.log('onStart')
@@ -17,16 +30,40 @@ loadingManager.onLoad = () => {
 loadingManager.onProgress = () => {
   console.log('onProgress')
 }
+loadingManager.onError = () => {
+  console.log('onError')
+}
 
 const textureLoader = new THREE.TextureLoader(loadingManager)
-const texture = textureLoader.load(imageSource)
+const texture1 = textureLoader.load(image1)
+const texture2 = textureLoader.load(image2)
+const imageDoor = textureLoader.load(image3)
+const textureDoorAmbient = textureLoader.load(imageDoorAmbient)
+const doorHeightTexture = textureLoader.load(imageDoorHeight)
+const doorMetalnessTexture = textureLoader.load(imageDoorMetal)
+const doorRoughnessTexture = textureLoader.load(imageDoorRough)
+const doorNormalTexture = textureLoader.load(imageDoorNormal)
+const doorAlphaTexture = textureLoader.load(imageDoorAlpha)
+const textureMatcap = textureLoader.load(imageMatcap)
+
+
+
+
+const environmentMapTexture = cubeTextureLoader.load([
+    'px.jpg',
+    'nx.jpg',
+    'py.jpg',
+    'ny.jpg',
+    'pz.jpg',
+    'nz.jpg',
+])
 
 // Add Debug
-const gui = new dat.GUI({ closed: true })
+const gui = new dat.GUI({closed: true})
 const parameters = {
   color: 0x86699b,
   spin: () => {
-    gsap.to(cube1.rotation, { duration: 1, y: cube1.rotation.y + 10 })
+    gsap.to(cube1.rotation, {duration: 1, y: cube1.rotation.y + 10})
   }
 }
 
@@ -39,7 +76,7 @@ gui
 gui
     .add(parameters, 'spin')
 
-const canvas = document.querySelector('.webgl')
+
 
 // Cursor
 const cursor = {
@@ -81,8 +118,18 @@ window.addEventListener('dblclick', () => {
 
 // scene
 const scene = new THREE.Scene()
+scene.background = new THREE.CubeTextureLoader()
+    .setPath( 'textures/environmentMaps/0/' )
+    .load( [
+      'px.jpg',
+      'nx.jpg',
+      'py.jpg',
+      'ny.jpg',
+      'pz.jpg',
+      'nz.jpg'
+    ] );
 
-//Object
+//Group
 const group = new THREE.Group()
 scene.add(group)
 
@@ -100,11 +147,111 @@ scene.add(group)
 //
 // geometry.setAttribute('position', positionsAttribute)
 
-const cube1 = new THREE.Mesh(
-    new THREE.BoxBufferGeometry(1, 1, 1, 2, 2, 2),
-    new THREE.MeshBasicMaterial({map: texture, wireframe: false})
+
+// Objects
+// const cube1 = new THREE.Mesh(
+//     new THREE.BoxBufferGeometry(1, 1, 1, 2, 2, 2),
+//     new THREE.MeshBasicMaterial({map: texture, wireframe: false})
+// )
+// group.add(cube1)
+// const material = new THREE.MeshNormalMaterial({map: texture1})
+
+// const material = new THREE.MeshLambertMaterial()
+const material = new THREE.MeshStandardMaterial()
+// const material = new THREE.MeshToonMaterial()
+material.metalness = 0.45
+material.roughness = 0.65
+material.envMap = environmentMapTexture
+// material.shininess = 1000
+// material.map = imageDoor
+// material.aoMap = textureDoorAmbient
+// material.aoMapIntensity = 1
+// material.displacementMap = doorHeightTexture
+// material.displacementScale = 0.05
+// material.metalnessMap = doorMetalnessTexture
+// material.roughnessMap = doorRoughnessTexture
+// material.normalMap = doorNormalTexture
+// material.transparent = true
+// material.alphaMap = doorAlphaTexture
+
+
+// material.specular = new THREE.Color(0x1188ff)
+
+// const material = new THREE.MeshMatcapMaterial()
+
+// material.matcap = textureMatcap
+
+
+// material.transparent = true
+
+// material.flatShading = true
+
+
+const sphere = new THREE.Mesh(
+    new THREE.SphereBufferGeometry(0.5, 16, 16),
+    material
 )
-group.add(cube1)
+
+// sphere.geometry.setAttribute(
+//     'uv2',
+//     new THREE.BufferAttribute(sphere.geometry.attributes.uv.array, 2)
+// )
+
+const plane = new THREE.Mesh(
+    new THREE.PlaneBufferGeometry(1, 1,),
+    material
+)
+// plane.geometry.setAttribute(
+//     'uv2',
+//     new THREE.BufferAttribute(plane.geometry.attributes.uv.array, 2)
+// )
+
+const torus = new THREE.Mesh(
+    new THREE.TorusBufferGeometry(0.3,0.2,16,32),
+    material
+)
+// torus.geometry.setAttribute(
+//     'uv2',
+//     new THREE.BufferAttribute(torus.geometry.attributes.uv.array, 2)
+// )
+
+sphere.position.set(-1.5,0,0)
+plane.position.set(0,0,0)
+torus.position.set(1.5,0,0)
+
+
+group.add(sphere, plane, torus)
+/*
+ * Lights
+*/
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+scene.add(ambientLight)
+
+const pointLight = new THREE.PointLight(0xffffff, 0.5)
+pointLight.position.x = 2
+pointLight.position.y = 3
+pointLight.position.z = 4
+scene.add(pointLight)
+
+// texture.repeat.x = 2;
+// texture.repeat.y = 3;
+// texture.wrapS = THREE.RepeatWrapping
+// texture.wrapT = THREE.RepeatWrapping
+//
+// texture.offset.x = 0.5
+// texture.offset.y = 0.5
+
+// texture.rotation = Math.PI / 4
+//
+// texture.center.x = 0.5
+// texture.center.y = 0.5
+
+// imageDoor.generateMipmaps = false
+// imageDoor.minFilter = THREE.NearestFilter
+// imageDoor.magFilter = THREE.NearestFilter
+
+// console.log(cube1.geometry.attributes.uv)
+
 
 // Debug settings
 gui.add(group.position, 'y', -3, 3, 0.01) // min,max,step,name
@@ -112,12 +259,16 @@ gui.add(group.position, 'x', -3, 3, 0.01)
 gui.add(group.position, 'z', -3, 3, 0.01)
 
 gui.add(group, 'visible')
-gui.add(cube1.material, 'wireframe')
+// gui.add(sphere.material, 'wireframe')
 
-gui.add(cube1.scale, 'x', 0, 10, 0.01)
-gui.add(cube1.scale, 'y', 0, 10, 0.01)
-gui.add(cube1.scale, 'z', 0, 10, 0.01)
-console.log(cube1)
+gui.add(sphere.scale, 'x', 0, 10, 0.01)
+gui.add(sphere.scale, 'y', 0, 10, 0.01)
+gui.add(sphere.scale, 'z', 0, 10, 0.01)
+
+gui.add(material, 'metalness', 0, 1, 0.0001)
+gui.add(material, 'roughness', 0, 1, 0.0001)
+gui.add(material, 'aoMapIntensity', 0, 10, 0.0001)
+gui.add(material, 'displacementScale', 0, 10, 0.0001)
 
 
 // cube1.position.set(0, 0, 0)
@@ -149,7 +300,6 @@ scene.add(camera)
 // camera.position.z =
 camera.position.set(1, 2, -3)
 // camera.lookAt(group.position)
-console.log(camera)
 
 // console.log(mesh.position.distanceTo(camera.position)) // длина вектора
 
@@ -172,11 +322,22 @@ renderer.render(scene, camera)
 // gsap.to(group.position, {duration: 1, delay: 2, x: Math.cos(4)})
 
 const clock = new THREE.Clock();
+
 //
 const tick = () => {
+  const elapsedTime = clock.getElapsedTime()
+  //Objects
+  sphere.rotation.y = 0.1 * elapsedTime
+  plane.rotation.y = 0.1 * elapsedTime
+  torus.rotation.y = 0.1 * elapsedTime
+
+  sphere.rotation.x = 0.15 * elapsedTime
+  plane.rotation.x = 0.15 * elapsedTime
+  torus.rotation.x = 0.15 * elapsedTime
+
   // gsap.to(group.position, {duration: 1, delay: 1, y: Math.sin(8)})
   // gsap.to(group.position, {duration: 1, delay: 2, x: Math.cos(4)})
-  // const elapsedTime = clock.getElapsedTime()
+
 //   //time
 //   camera.position.y = Math.sin(elapsedTime);
 //   camera.rotation.y = Math.sin(elapsedTime);
