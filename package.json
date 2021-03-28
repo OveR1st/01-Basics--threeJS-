@@ -1,7 +1,11 @@
 {
   "scripts": {
     "build": "webpack --config ./bundler/webpack.prod.js",
-    "dev": "webpack serve --config ./bundler/webpack.dev.js"
+    "dev": "webpack serve --config ./bundler/webpack.dev.js",
+    "scripts": {
+      "deploy": "NODE_ENV=production webpack",
+      "publish": "git checkout gh-pages && git merge master && npm run deploy && git commit -am 'Deploy' && git push origin gh-pages && git checkout @{-1}"
+    }
   },
   "dependencies": {
     "@babel/core": "^7.12.10",
